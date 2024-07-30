@@ -1,0 +1,20 @@
+# Virtual Environments and Credentials
+.env
+resgen_env/
+
+# Configuration
+config.py
+
+
+# Data
+Resume.csv
+
+# Training
+chatbot_transcript.pdf
+embeddings.ipynb
+main.py
+prompt_engineering.py
+
+# Archive
+Archive/
+__pycache__/
