@@ -7,11 +7,13 @@ config.py
 
 
 # Data
-Resume.csv
+*.csv
+vector_database/
 
 # Training
 chatbot_transcript.pdf
 embeddings.ipynb
+not_main.py
 main.py
 prompt_engineering.py
 
