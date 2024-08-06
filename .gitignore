@@ -14,7 +14,6 @@ vector_database/
 chatbot_transcript.pdf
 embeddings.ipynb
 not_main.py
-main.py
 prompt_engineering.py
 
 # Archive
