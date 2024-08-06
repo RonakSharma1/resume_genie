@@ -42,13 +42,8 @@ chroma_client = create_client.get_chroma_vector_db_client()
 
 # Checking Embeddings CSV existence
 if os.path.isfile(EMBEDDNIGS_FILE_NAME):
-    print("world")
     resume_embeddings_df = pd.read_csv(EMBEDDNIGS_FILE_NAME, converters={'embeddings': literal_eval}) # convert string stored embeddings back to list
-    print("hello")
 else:
-    
-    ''' CHECK THIS PATH!!!!!!!!!!!! '''
-    
     # # Chunking the document
     resume_raw_data_df = pd.read_csv(RAW_DATA)
     resume_latest_data_df = chunking.divide_document_into_smaller_chunks(resume_raw_data_df=resume_raw_data_df)
@@ -58,7 +53,6 @@ else:
     
     # Store resume document in vector database [IF CSV EXISTS THEN SO SHOULD VECTOR DB]
     vector_database.store_document_in_vector_db(chroma_client,resume_embeddings_df)
-
 
 # Ask question to the LLM
 question = input("Enter your question about resumes:")
