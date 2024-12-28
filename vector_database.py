@@ -1,7 +1,6 @@
 from config import NUMBER_OF_RESULTS_TO_RETURN, VECTOR_COLLECTION_NAME
 import embeddings
 
-
 def store_document_in_vector_db(chroma_client,resume_latest_data_df):
     collection_of_resumes_db = chroma_client.get_or_create_collection(name=VECTOR_COLLECTION_NAME)
     
@@ -10,39 +9,33 @@ def store_document_in_vector_db(chroma_client,resume_latest_data_df):
         collection_of_resumes_db.add(
             embeddings = [row["embeddings"]],
             documents = [row["Resume_str"]],
-            ids = [str(row["index"])]
+            ids = [str(row["index"])],
+            metadatas = [{"doc_id":str(row["ID"])}]
         )
 
 
-def query_vector_db_for_user_question(azure_client, chroma_client, question,resume_embeddings_df):
+def query_vector_db_for_user_question(openai_client, chroma_client, question):
+    # Fetch the vector db collection
     collection_of_resumes_db = chroma_client.get_or_create_collection(name=VECTOR_COLLECTION_NAME)
 
-    questions_embedding = embeddings.get_embedding(azure_client, question)
+    questions_embedding = embeddings.get_embedding(openai_client, question)
 
+    # Given the above query, identify the top n matching results using vector search
     results = collection_of_resumes_db.query(
         query_embeddings=[questions_embedding],
         n_results=NUMBER_OF_RESULTS_TO_RETURN
     )
 
-    return _extract_optimal_solution(results,resume_embeddings_df)
+    return _extract_optimal_solution(results)
     
 
-def _extract_optimal_solution(vector_db_search_result, resume_embeddings_df):
+def _extract_optimal_solution(vector_db_search_result):
+    # extracting the top matching Resume and its ID
     best_result_document = vector_db_search_result.get('documents')[0][0]
+    best_result_doc_id = int(vector_db_search_result.get('metadatas')[0][0].get("doc_id"))
 
-    # extracting the top result's string/document and id based on index
-    best_result_index = int(vector_db_search_result.get('ids')[0][0])
-    best_result_id = resume_embeddings_df.loc[(resume_embeddings_df.index==best_result_index)]['ID']
-    best_result_id = int(best_result_id.iloc[0])
+    # extracting the IDs of the rest matching Resume(s)
+    list_of_resume_ids = [str(vector_db_search_result.get('metadatas')[0][i].get("doc_id")) for i in range(1,NUMBER_OF_RESULTS_TO_RETURN)]
+    string_of_resume_ids = ','.join(list_of_resume_ids)
 
-    # extracting the id's of other results to provide to user in their response
-    list_of_resume_ids = []
-    for i in range(1,NUMBER_OF_RESULTS_TO_RETURN):
-        other_result_index = int(vector_db_search_result.get('ids')[0][i])
-        other_result_id = resume_embeddings_df.loc[(resume_embeddings_df.index==other_result_index)]['ID']
-        list_of_resume_ids.append((other_result_id.iloc[0]))
-
-    string_of_resume_ids = ','.join(map(str, list_of_resume_ids))
-    best_result = best_result_document + f". The id of this specific resume is {best_result_id}. Also, other matching resumes are {string_of_resume_ids}"
-    
-    return best_result
+    return best_result_document + f". The id of this specific resume is {best_result_doc_id}. Also, other matching resumes are {string_of_resume_ids}"
