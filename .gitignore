@@ -8,7 +8,8 @@ config.py
 
 # Data
 *.csv
-vector_database/
+*.pkl
+resume_vector_database/
 
 # Training
 chatbot_transcript.pdf
@@ -23,3 +24,6 @@ __pycache__/
 
 # ToDo
 todo.txt
+
+# Reading
+Knowledge.md

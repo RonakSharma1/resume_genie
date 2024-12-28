@@ -1,10 +1,10 @@
-from config import PERSONA, AZURE_MODEL_NAME
+from config import PERSONA, GPT_MODEL_NAME
 
 
 
 def _query_llm(client,persona, question, example=""):
   completion = client.chat.completions.create(
-    model=AZURE_MODEL_NAME,
+    model=GPT_MODEL_NAME,
     messages=[
       {"role": "system", "content": f"{persona}"},
       {"role": "user", "content": f"{question}"},
@@ -15,7 +15,7 @@ def _query_llm(client,persona, question, example=""):
 
 
 
-def answer_question(azure_client, best_result, question):
+def answer_question(openai_client, best_result, question):
     persona=PERSONA+best_result
-    return _query_llm(client=azure_client, question=question, persona=persona)
+    return _query_llm(client=openai_client, question=question, persona=persona)
  
