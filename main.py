@@ -1,4 +1,4 @@
-from config import EMBEDDNIGS_FILE_NAME, RAW_DATA
+from config import RAW_DATA, VECTOR_COLLECTION_NAME
 
 # Below 3 lines added for older python version
 __import__('pysqlite3')
@@ -7,8 +7,6 @@ sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 # libraries
 import pandas as pd
-from ast import literal_eval
-import os
 
 # helper functions
 import create_client
@@ -17,25 +15,27 @@ import embeddings
 import vector_database
 import query_llm
 
-# Azure OpenAI Client
-azure_client = create_client.get_azure_openai_client()
+# OpenAI Client
+openai_client = create_client.get_openai_client()
 
 # Vector DB Client
 chroma_client = create_client.get_chroma_vector_db_client()
 
-
-# Checking Embeddings CSV existence
-if os.path.isfile(EMBEDDNIGS_FILE_NAME):
-    resume_embeddings_df = pd.read_csv(EMBEDDNIGS_FILE_NAME, converters={'embeddings': literal_eval}) # convert string stored embeddings back to list
-else:
-    # # Chunking the document
+'''
+If embeddings database doesn't exists, read and chunk data 
+and generate and store their embeddings in a vector database
+'''
+ # REDUCE THIS AWAY TO ANOTHER FUNCTION????? TRY THIS BELOW CONDITION ONCE EVERYTHING ELSE IS WORKING
+if not chroma_client.get_or_create_collection(name=VECTOR_COLLECTION_NAME).count() > 0:
+    
+    # Reading data and Chunking into smaller token size
     resume_raw_data_df = pd.read_csv(RAW_DATA)
     resume_latest_data_df = chunking.divide_document_into_smaller_chunks(resume_raw_data_df=resume_raw_data_df)
-     
-    # generate embeddings
-    resume_embeddings_df = embeddings.generate_and_store_embeddings(resume_latest_data_df,azure_client)
+
+    # Generate embeddings
+    resume_embeddings_df = embeddings.generate_embeddings_and_save_in_memory(resume_latest_data_df, openai_client)
     
-    # Store resume document in vector database [IF CSV EXISTS THEN SO SHOULD VECTOR DB]
+    # Store embeddings in vector database for optimised vector search [If csv exists so should database]
     vector_database.store_document_in_vector_db(chroma_client,resume_embeddings_df)
 
 # Ask question to the LLM
@@ -43,14 +43,12 @@ while(1):
     question = input("Enter your question about resumes:")
     '''
     Example:
-    Does any candidate already has Aviation Mechanic experience? Please summarise their experience and provide their resume id. Also provide ids of other matching resumes
-        
+    Does any candidate already has Aviation Mechanic experience? Please summarise their experience and provide their resume id. Also provide ids of other matching resumes   
     '''
+    # trial = " Does any candidate already has Aviation Mechanic experience? Please summarise their experience and provide their resume id. Also provide ids of other matching resumes"
     # Identify the best vector result
-    best_match_from_db = vector_database.query_vector_db_for_user_question(azure_client, chroma_client, question, resume_embeddings_df)
-
+    best_match_from_db = vector_database.query_vector_db_for_user_question(openai_client, chroma_client, question)
 
     # Respond to user query with the best result
-    response =  query_llm.answer_question(azure_client, best_match_from_db, question)
-
+    response =  query_llm.answer_question(openai_client, best_match_from_db, question)
     print(response)
