@@ -1,4 +1,5 @@
-from config import AZURE_OPENAI_API_KEY,AZURE_API_ENDPOINT,API_VERSION, DATABASE_LOCAL_PATH, OPENAI_API_KEY
+from config import AZURE_OPENAI_API_KEY, AZURE_API_ENDPOINT, API_VERSION, OPENAI_API_KEY
+from parameters import DATABASE_LOCAL_PATH
 from openai import AzureOpenAI, OpenAI
 import chromadb
 from chromadb.config import DEFAULT_TENANT, DEFAULT_DATABASE, Settings
