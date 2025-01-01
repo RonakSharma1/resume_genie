@@ -1,8 +1,8 @@
-from config import PERSONA, GPT_MODEL_NAME
+from config import GPT_MODEL_NAME
+from parameters import PERSONA
+from typing import Any
 
-
-
-def _query_llm(client,persona, question, example=""):
+def _query_llm(client: Any, persona: str, question: str, example: str =""):
   completion = client.chat.completions.create(
     model=GPT_MODEL_NAME,
     messages=[
@@ -14,8 +14,7 @@ def _query_llm(client,persona, question, example=""):
   return completion.choices[0].message.content
 
 
-
-def answer_question(openai_client, best_result, question):
+def answer_question(openai_client: Any, best_result: Any, question: str):
     persona=PERSONA+best_result
     return _query_llm(client=openai_client, question=question, persona=persona)
  

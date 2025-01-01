@@ -1,14 +1,14 @@
-import pandas as pd
+from pandas import DataFrame
 from transformers import GPT2TokenizerFast
+import pandas as pd
 
 MAX_NUMBER_OF_CHARACTERS_PER_DOCUMENT = 1200 # Approximately 300 tokens
 TOKENISER = GPT2TokenizerFast.from_pretrained("gpt2") # tokeniser
 
-def divide_document_into_smaller_chunks(resume_raw_data_df):
+def divide_document_into_smaller_chunks(resume_raw_data_df: DataFrame):
     
     # calculate tokens per resume
     resume_raw_data_df = _calculate_number_of_tokens_per_document(resume_raw_data_df)
-
     resume_latest_data_df = pd.DataFrame(columns=["ID", "Resume_str", "number_tokens"])
     
     # initialise
@@ -29,6 +29,6 @@ def divide_document_into_smaller_chunks(resume_raw_data_df):
     return resume_latest_data_df
 
 
-def _calculate_number_of_tokens_per_document(resume_raw_data_df):
+def _calculate_number_of_tokens_per_document(resume_raw_data_df: DataFrame):
     resume_raw_data_df['number_tokens'] = resume_raw_data_df.Resume_str.apply(lambda x: len(TOKENISER.encode(x)))
     return resume_raw_data_df
