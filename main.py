@@ -1,4 +1,4 @@
-from config import RAW_DATA, VECTOR_COLLECTION_NAME
+from parameters import RAW_DATA, VECTOR_COLLECTION_NAME, NEW_RAW_DATA
 
 # Below 3 lines added for older python version
 __import__('pysqlite3')
@@ -21,32 +21,40 @@ openai_client = create_client.get_openai_client()
 # Vector DB Client
 chroma_client = create_client.get_chroma_vector_db_client()
 
-'''
-If embeddings database doesn't exists, read and chunk data 
-and generate and store their embeddings in a vector database
-'''
- # REDUCE THIS AWAY TO ANOTHER FUNCTION????? TRY THIS BELOW CONDITION ONCE EVERYTHING ELSE IS WORKING
-if not chroma_client.get_or_create_collection(name=VECTOR_COLLECTION_NAME).count() > 0:
+
+def process_and_store_resumes_in_db(file_name: str):
+    '''
+    If embeddings database doesn't exists, read and chunk data 
+    and generate and store their embeddings in a vector database
+    '''
+    # Reading data
+    resume_raw_data_df = pd.read_csv(file_name)
     
-    # Reading data and Chunking into smaller token size
-    resume_raw_data_df = pd.read_csv(RAW_DATA)
+    # Chunking data to meet GPT model's token limit size
     resume_latest_data_df = chunking.divide_document_into_smaller_chunks(resume_raw_data_df=resume_raw_data_df)
 
     # Generate embeddings
     resume_embeddings_df = embeddings.generate_embeddings_and_save_in_memory(resume_latest_data_df, openai_client)
     
-    # Store embeddings in vector database for optimised vector search [If csv exists so should database]
+    # Store embeddings in vector database for optimised vector search
     vector_database.store_document_in_vector_db(chroma_client,resume_embeddings_df)
+
+
+# Store resumes in database if non existent
+if not chroma_client.get_or_create_collection(name=VECTOR_COLLECTION_NAME).count() > 0:
+    process_and_store_resumes_in_db(file_name=RAW_DATA)
+else: 
+    # Add new resumes to existing database
+    user_mode = input("Do you have any new resumes to add? Y/N: ")
+    if user_mode == "Y":
+        process_and_store_resumes_in_db(file_name=NEW_RAW_DATA)
+
 
 # Ask question to the LLM
 while(1):
-    question = input("Enter your question about resumes:")
-    '''
-    Example:
-    Does any candidate already has Aviation Mechanic experience? Please summarise their experience and provide their resume id. Also provide ids of other matching resumes   
-    '''
-    # trial = " Does any candidate already has Aviation Mechanic experience? Please summarise their experience and provide their resume id. Also provide ids of other matching resumes"
-    # Identify the best vector result
+    question = input("Enter your question about resumes: ")
+    
+    # Identifying the top result using inbuilt vector search
     best_match_from_db = vector_database.query_vector_db_for_user_question(openai_client, chroma_client, question)
 
     # Respond to user query with the best result
